@@ -43,6 +43,7 @@
     "bcrypt-ts": "^7.0.0",
     "cors": "^2.8.5",
     "express-validator": "^7.2.1",
+    "generate-password-ts": "^1.6.5",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",

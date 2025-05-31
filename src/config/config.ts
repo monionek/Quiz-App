@@ -33,18 +33,18 @@ interface envConfig {
 
 export const envConfig = {
   // PostgreSQL
-  postgresDB: getEnvVar('POSTGRES_DB'),
-  postgresUser: getEnvVar('POSTGRES_USER'),
-  postgresPassword: getEnvVar('POSTGRES_PASSWORD'),
-  postgresHost: getEnvVar('POSTGRES_HOST'),
-  postgresPort: parseInt(getEnvVar('POSTGRES_PORT'), 10),
+  postgresDB: getEnvVar("POSTGRES_DB"),
+  postgresUser: getEnvVar("POSTGRES_USER"),
+  postgresPassword: getEnvVar("POSTGRES_PASSWORD"),
+  postgresHost: getEnvVar("POSTGRES_HOST"),
+  postgresPort: parseInt(getEnvVar("POSTGRES_PORT"), 10),
 
   // MongoDB
-  mongoUrl: getEnvVar('MONGO_URI'),
+  mongoUrl: getEnvVar("MONGO_URI"),
 
   // JWT / Auth
-  jwtSecret: getEnvVar('JWT_SECRET'),
-  jwtTime: getEnvVar('JWT_EXPIRES_IN'),
+  jwtSecret: getEnvVar("JWT_SECRET"),
+  jwtTime: getEnvVar("JWT_EXPIRES_IN"),
 
   // Firebase (jeśli używasz)
   fireProjectID: process.env.FIREBASE_PROJECT_ID,

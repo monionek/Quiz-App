@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import type { JwtPayload } from '../utils/jwtGenerator';
-import { envConfig } from '../config/config';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "../utils/jwtGenerator";
+import { envConfig } from "../config/config";
 
 declare global {
   namespace Express {
@@ -16,22 +16,23 @@ export const requireAuth = (
   res: Response,
   next: NextFunction,
 ) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.startsWith('Bearer ')
-    ? authHeader.slice(7)
-    : authHeader;
+  try {
+    const authHeader = req.headers.authorization;
+    const token =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : authHeader;
 
-  if (!token) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
-  jwt.verify(token, envConfig.jwtSecret, (err, user) => {
-    if (err) {
-      res.status(401).json({ error: 'Invalid token' });
+    if (!token) { 
+      res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    req.user = user as JwtPayload;
+
+    const user = jwt.verify(token, envConfig.jwtSecret) as JwtPayload;
+    req.user = user;
     next();
-  });
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+    return; 
+  }
 };

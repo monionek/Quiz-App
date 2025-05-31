@@ -22,7 +22,7 @@ connectPostgres();
 
 // Routes
 app.use("/api/quizzes", quizRoutes);
-app.use("/api/user", userRoutes)
+app.use("/api/user", userRoutes);
 
 // Error handling
 app.use(errorHandler);
