@@ -1,4 +1,8 @@
+import mongoose from "mongoose";
+import { envConfig } from "../config/config";
+
 export const connectMongo = async () => {
-  console.log('Connected to MongoDB');
-  // mongoose.connect()...
+mongoose.connect(envConfig.mongoUrl).then(() => {
+  console.log('MongoDB connected');
+});
 };
