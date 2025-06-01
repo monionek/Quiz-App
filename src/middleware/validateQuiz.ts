@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 
-const validateQuiz = [
+export const validateQuiz = [
   body("title").notEmpty().withMessage("Title must be provided"),
 
   body("description").notEmpty().withMessage("Description must be provided"),
@@ -39,4 +39,11 @@ const validateQuiz = [
     }),
 ];
 
-export default validateQuiz;
+export const validateQuizUpdate = [
+  body("title").optional().isString(),
+  body("description").optional().isString(),
+  body("tags").optional().isArray(),
+  body("difficulty").optional().isIn(["easy", "medium", "hard"]),
+  body("isPrivate").optional().isBoolean(),
+  body("duration").optional().isNumeric(),
+];

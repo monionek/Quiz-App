@@ -34,6 +34,15 @@ export const Quiz = sequelize.define(
       type: DataTypes.ARRAY(DataTypes.STRING),
       defaultValue: [],
     },
+    attemptsCount: {
+      type: DataTypes.NUMBER,
+      defaultValue: 0,
+    },
+    language: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'pl',
+    },
     ownerId: {
       type: DataTypes.UUID,
       allowNull: false,

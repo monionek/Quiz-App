@@ -1,6 +1,8 @@
 import { User } from "./userModel";
 import { Quiz } from "./quizModel";
 import { Question } from "./questionModel";
+import { Tag } from "./tagModel";
+import { Category } from "./categoryModel";
 
 // RELACJA: User → Quiz (1:N)
 User.hasMany(Quiz, {
@@ -24,5 +26,10 @@ Question.belongsTo(Quiz, {
   as: "quiz",
 });
 
+Quiz.belongsTo(Category, { foreignKey: "categoryId" }); // quiz.categoryId
+Category.hasMany(Quiz, { foreignKey: "categoryId" });
+
+Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId" });
+Tag.belongsToMany(Quiz, { through: "QuizTags", foreignKey: "tagId" });
 // Eksport modeli
 export { User, Quiz, Question };
