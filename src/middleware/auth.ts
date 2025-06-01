@@ -23,7 +23,7 @@ export const requireAuth = (
         ? authHeader.slice(7)
         : authHeader;
 
-    if (!token) { 
+    if (!token) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
@@ -33,6 +33,6 @@ export const requireAuth = (
     next();
   } catch (err) {
     res.status(401).json({ error: "Invalid token" });
-    return; 
+    return;
   }
 };

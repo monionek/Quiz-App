@@ -9,7 +9,7 @@ import { connectPostgres } from "./db/postgres";
 import { connectMongo } from "./db/mongo";
 import { envConfig } from "./config/config";
 import userRoutes from "./routes/userRoutes";
-
+import "./models/postgresModels/index";
 const app = express();
 app.use(helmet());
 app.use(cors());

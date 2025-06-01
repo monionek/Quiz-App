@@ -1,6 +1,5 @@
 import { Sequelize } from "sequelize";
 import { envConfig } from "../config/config";
-
 export const sequelize = new Sequelize(
   envConfig.postgresDB,
   envConfig.postgresUser,

@@ -4,6 +4,7 @@ import { envConfig } from "../config/config";
 export interface JwtPayload {
   username: string;
   role: "admin" | "user";
+  id: string;
 }
 
 export function generateToken(payload: JwtPayload): string {

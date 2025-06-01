@@ -21,8 +21,8 @@ const router = express.Router();
 router.post("/register", validateRegister, registerUser);
 router.get("/:selector", getUser);
 router.post("/login", validateLogin, loginUser);
-router.patch("/updateUser", validateUpdate, requireAuth, updateUser);
-router.patch("updateUser/:name", validateUpdateRole, updateUserRole);
+router.patch("/update-user", validateUpdate, requireAuth, updateUser);
+router.patch("update-user/:name", validateUpdateRole, updateUserRole);
 router.patch(
   "user/restartPassword",
   body("email").isEmail().withMessage("email must be provided"),

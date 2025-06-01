@@ -81,6 +81,7 @@ export const loginUser = async (req: Request, res: Response) => {
       const payload = {
         username: existingUser.get().username,
         role: existingUser.get().role,
+        id: existingUser.get().userId,
       };
       const token = generateToken(payload);
       res.status(201).json({ token: token });
