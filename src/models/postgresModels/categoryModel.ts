@@ -24,5 +24,5 @@ Category.init(
     sequelize,
     modelName: "Category",
     tableName: "categories",
-  }
+  },
 );

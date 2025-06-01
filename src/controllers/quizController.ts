@@ -77,7 +77,7 @@ export const getQuizzes = async (req: Request, res: Response) => {
     if (difficulty) {
       whereClause.difficulty = difficulty;
     }
-        if (difficulty) {
+    if (difficulty) {
       whereClause.language = language;
     }
 
@@ -106,24 +106,26 @@ export const getQuizzes = async (req: Request, res: Response) => {
 export const getQuiz = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      res.status(403).json({ message: "You must be logged in for starting a quiz"});
+      res
+        .status(403)
+        .json({ message: "You must be logged in for starting a quiz" });
       return;
     }
     const quizId = req.params.id;
     const quiz = await Quiz.findOne({
-      where: {quizId}
+      where: { quizId },
     });
     if (!quiz) {
-      res.status(404).json({message: "Quiz not found"});
+      res.status(404).json({ message: "Quiz not found" });
       return;
     }
-    res.status(203).json({ quiz: quiz})
+    res.status(203).json({ quiz: quiz });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to fetch quiz" });
     return;
   }
-}
+};
 
 export const deleteQuiz = async (req: Request, res: Response) => {
   try {
@@ -160,7 +162,7 @@ export const editQuiz = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       res.status(403).json({ message: "You must be logged in" });
-            return;
+      return;
     }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -174,37 +176,41 @@ export const editQuiz = async (req: Request, res: Response) => {
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) {
       res.status(404).json({ message: "Quiz not found" });
-            return;
-
+      return;
     }
 
     if (userRole !== "admin" && quiz.get().userId !== userId) {
       res.status(403).json({ message: "Access denied" });
-            return;
-
+      return;
     }
 
     const updateFields: Partial<QuizInterface> = {};
-    const allowedFields = ["title", "description", "tags", "difficulty", "isPrivate", "duration"];
+    const allowedFields = [
+      "title",
+      "description",
+      "tags",
+      "difficulty",
+      "isPrivate",
+      "duration",
+    ];
 
-for (const field of allowedFields as (keyof QuizInterface)[]) {
-  if (req.body[field] !== undefined) {
-    updateFields[field] = req.body[field];
-  }
-}
-
+    for (const field of allowedFields as (keyof QuizInterface)[]) {
+      if (req.body[field] !== undefined) {
+        updateFields[field] = req.body[field];
+      }
+    }
 
     if (Object.keys(updateFields).length === 0) {
       res.status(400).json({ message: "No valid fields provided for update" });
-            return;
+      return;
     }
 
     await quiz.update(updateFields);
     res.status(200).json({ message: "Quiz updated", quiz });
-    return; 
+    return;
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return; 
+    return;
   }
 };

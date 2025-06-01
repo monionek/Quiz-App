@@ -41,7 +41,7 @@ export const Quiz = sequelize.define(
     language: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'pl',
+      defaultValue: "pl",
     },
     ownerId: {
       type: DataTypes.UUID,

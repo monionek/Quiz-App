@@ -20,5 +20,5 @@ Tag.init(
     sequelize,
     modelName: "Tag",
     tableName: "tags",
-  }
+  },
 );
