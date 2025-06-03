@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "../utils/jwtGenerator";
 import { envConfig } from "../config/config";
+import { IQuizSession } from "../models/models";
 
 declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
+      quizSession?: IQuizSession;
     }
   }
 }

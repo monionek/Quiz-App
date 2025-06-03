@@ -11,7 +11,12 @@ export const Question = sequelize.define(
     },
     quizId: {
       type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      allowNull: false,
+      references: {
+        model: "quizzes",
+        key: "id",
+      },
+      onDelete: "CASCADE",
     },
     type: {
       type: DataTypes.ENUM("single", "multiple", "true_false", "open"),
@@ -23,7 +28,7 @@ export const Question = sequelize.define(
     },
     options: {
       type: DataTypes.ARRAY(DataTypes.STRING),
-      allowNull: false, // dla wyboru
+      allowNull: true, // bo pytania otwarte mogą ich nie mieć
     },
     correctAnswers: {
       type: DataTypes.ARRAY(DataTypes.STRING),

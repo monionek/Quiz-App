@@ -5,15 +5,7 @@ export const validateQuiz = [
 
   body("description").notEmpty().withMessage("Description must be provided"),
 
-  body("category")
-    .isArray({ min: 1 })
-    .withMessage("Category must be a non-empty array of strings")
-    .custom((arr) => {
-      if (!arr.every((item: any) => typeof item === "string")) {
-        throw new Error("All category items must be strings");
-      }
-      return true;
-    }),
+  body("category").isInt().withMessage("Category must be a integer"),
 
   body("difficulty")
     .notEmpty()
@@ -28,12 +20,11 @@ export const validateQuiz = [
   body("isPrivate").isBoolean().withMessage("isPrivate must be a boolean"),
 
   body("tags")
-    .optional()
     .isArray()
     .withMessage("Tags must be an array")
     .custom((arr) => {
-      if (!arr.every((item: any) => typeof item === "string")) {
-        throw new Error("All tags must be strings");
+      if (!arr.every((item: any) => typeof item === typeof 1)) {
+        throw new Error("All tagsid must be a integer");
       }
       return true;
     }),
@@ -42,7 +33,15 @@ export const validateQuiz = [
 export const validateQuizUpdate = [
   body("title").optional().isString(),
   body("description").optional().isString(),
-  body("tags").optional().isArray(),
+  body("tags")
+    .optional()
+    .isArray()
+    .custom((arr) => {
+      if (!arr.every((item: any) => typeof item === typeof 1)) {
+        throw new Error("All tagsid must be a integer");
+      }
+      return true;
+    }),
   body("difficulty").optional().isIn(["easy", "medium", "hard"]),
   body("isPrivate").optional().isBoolean(),
   body("duration").optional().isNumeric(),

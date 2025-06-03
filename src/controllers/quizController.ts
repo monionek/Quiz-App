@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
-import { Quiz } from "../models/postgresModels";
+import { Category, Quiz, Tag } from "../models/postgresModels";
 import { Op } from "sequelize";
-import { QuizInterface } from "../models/models";
+import { QuizInstance } from "../models/models";
 
 export const createQuiz = async (req: Request, res: Response) => {
   try {
@@ -18,26 +18,26 @@ export const createQuiz = async (req: Request, res: Response) => {
     const {
       title,
       description,
-      category,
       difficulty,
       duration,
       isPrivate,
       tags,
       language,
+      categoryId,
     } = req.body;
     const userId = req.user.id;
     const newQuiz = await Quiz.create({
       title,
       description,
-      category,
       difficulty,
+      categoryId,
       duration,
       isPrivate,
-      tags,
       userId,
       language,
     });
     if (newQuiz) {
+      await (newQuiz as QuizInstance).setTags(tags);
       res.status(201).json({ message: "Quiz created", quiz: newQuiz });
       return;
     }
@@ -56,7 +56,7 @@ export const getQuizzes = async (req: Request, res: Response) => {
       limit = 10,
       search = "",
       difficulty,
-      category,
+      categoryId,
       language,
       sortBy = "createdAt",
       order = "DESC",
@@ -77,14 +77,12 @@ export const getQuizzes = async (req: Request, res: Response) => {
     if (difficulty) {
       whereClause.difficulty = difficulty;
     }
-    if (difficulty) {
+    if (language) {
       whereClause.language = language;
     }
-
-    if (category) {
-      const tags = String(category).split(",");
-      whereClause.categories = {
-        [Op.contains]: tags,
+    if (categoryId) {
+      whereClause["$Category.name$"] = {
+        [Op.iLike]: `%${categoryId}%`,
       };
     }
 
@@ -92,6 +90,7 @@ export const getQuizzes = async (req: Request, res: Response) => {
       where: whereClause,
       limit: Number(limit),
       offset: offset,
+      include: [Category, Tag],
       order: [[String(sortBy), String(order)]],
     });
 
@@ -112,8 +111,11 @@ export const getQuiz = async (req: Request, res: Response) => {
       return;
     }
     const quizId = req.params.id;
-    const quiz = await Quiz.findOne({
-      where: { quizId },
+    const quiz = await Quiz.findByPk(quizId, {
+      include: [
+        { model: Category, attributes: ["id", "name"] },
+        { model: Tag, attributes: ["id", "name"] },
+      ],
     });
     if (!quiz) {
       res.status(404).json({ message: "Quiz not found" });
@@ -141,7 +143,7 @@ export const deleteQuiz = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Quiz not found" });
       return;
     }
-    if (userRole === "admin" || quiz.get().userId === userId) {
+    if (userRole === "admin" || quiz.get().ownerId === userId) {
       await quiz.destroy();
       res.status(200).json({ message: "Quiz deleted" });
       return;
@@ -164,14 +166,16 @@ export const editQuiz = async (req: Request, res: Response) => {
       res.status(403).json({ message: "You must be logged in" });
       return;
     }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() }); // 422 Unprocessable Entity
+      res.status(422).json({ errors: errors.array() });
       return;
     }
+
     const quizId = req.params.id;
     const userRole = req.user.role;
-    const userId = req.user.username;
+    const userId = req.user.id;
 
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) {
@@ -179,38 +183,81 @@ export const editQuiz = async (req: Request, res: Response) => {
       return;
     }
 
-    if (userRole !== "admin" && quiz.get().userId !== userId) {
+    if (userRole !== "admin" && quiz.get().ownerId !== userId) {
       res.status(403).json({ message: "Access denied" });
       return;
     }
 
-    const updateFields: Partial<QuizInterface> = {};
+    const updateFields: Partial<QuizInstance> = {};
     const allowedFields = [
       "title",
       "description",
-      "tags",
       "difficulty",
       "isPrivate",
       "duration",
+      "language",
+      "categoryId",
     ];
 
-    for (const field of allowedFields as (keyof QuizInterface)[]) {
+    for (const field of allowedFields as (keyof QuizInstance)[]) {
       if (req.body[field] !== undefined) {
         updateFields[field] = req.body[field];
       }
     }
 
-    if (Object.keys(updateFields).length === 0) {
-      res.status(400).json({ message: "No valid fields provided for update" });
-      return;
+    await quiz.update(updateFields);
+
+    if (req.body.tags && Array.isArray(req.body.tags)) {
+      const tags = req.body.tags;
+
+      const tagInstances = await Tag.findAll({
+        where: { name: tags },
+      });
+
+      await (quiz as QuizInstance).setTags(tagInstances);
     }
 
-    await quiz.update(updateFields);
     res.status(200).json({ message: "Quiz updated", quiz });
-    return;
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return;
+  }
+};
+
+export const removeTagFromQuiz = async (req: Request, res: Response) => {
+  try {
+    const { quizId, tagName } = req.params;
+
+    if (!req.user) {
+      res.status(403).json({ message: "You must be logged in" });
+      return;
+    }
+
+    const quiz = await Quiz.findByPk(quizId);
+    if (!quiz) {
+      res.status(404).json({ message: "Quiz not found" });
+      return;
+    }
+
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
+    if (userRole !== "admin" && quiz.get().ownerId !== userId) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    const tag = await Tag.findOne({ where: { name: tagName } });
+    if (!tag) {
+      res.status(404).json({ message: "Tag not found" });
+      return;
+    }
+
+    await (quiz as QuizInstance).removeTag(tag);
+
+    res.status(200).json({ message: `Tag '${tagName}' removed from quiz` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };

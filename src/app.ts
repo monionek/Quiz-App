@@ -10,6 +10,8 @@ import { connectMongo } from "./db/mongo";
 import { envConfig } from "./config/config";
 import userRoutes from "./routes/userRoutes";
 import "./models/postgresModels/index";
+import categoryRoutes from "./routes/categoryRoutes";
+import tagRoutes from "./routes/tagRoutes";
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -23,6 +25,8 @@ connectPostgres();
 // Routes
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/tag", tagRoutes);
 
 // Error handling
 app.use(errorHandler);

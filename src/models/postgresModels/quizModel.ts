@@ -1,5 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../db/postgres";
+import { Category } from "./categoryModel";
+import { Tag } from "./tagModel";
 
 export const Quiz = sequelize.define(
   "Quiz",
@@ -17,7 +19,6 @@ export const Quiz = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    category: { type: DataTypes.STRING, allowNull: false },
     difficulty: {
       type: DataTypes.ENUM("easy", "medium", "hard"),
       allowNull: false,
@@ -25,17 +26,13 @@ export const Quiz = sequelize.define(
     duration: {
       type: DataTypes.INTEGER,
       defaultValue: 120,
-    }, // w sekundach
+    },
     isPrivate: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    tags: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
-      defaultValue: [],
-    },
     attemptsCount: {
-      type: DataTypes.NUMBER,
+      type: DataTypes.INTEGER,
       defaultValue: 0,
     },
     language: {
@@ -47,9 +44,23 @@ export const Quiz = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
     },
+    categoryId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Category,
+        key: "id",
+      },
+    },
   },
   {
     tableName: "quizzes",
     timestamps: true,
   },
 );
+
+Quiz.belongsTo(Category, { foreignKey: "categoryId" });
+Category.hasMany(Quiz, { foreignKey: "categoryId" });
+
+Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId" });
+Tag.belongsToMany(Quiz, { through: "QuizTags", foreignKey: "tagId" });
