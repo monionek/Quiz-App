@@ -30,3 +30,9 @@ export interface QuestionInterface extends Model {
   points: number;
   order: number;
 }
+
+export interface UpdateUserInterface {
+  username?: string;
+  email?: string;
+  password?: string;
+}

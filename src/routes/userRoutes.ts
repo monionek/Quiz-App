@@ -15,17 +15,33 @@ import {
   validateUpdateRole,
 } from "../middleware/validateUser";
 import { body } from "express-validator";
+import { valResult } from "../middleware/validateResult";
+import { isAdmin } from "../middleware/isAdmin";
 
 const router = express.Router();
 
-router.post("/register", validateRegister, registerUser);
+router.post("/register", validateRegister, valResult, registerUser);
 router.get("/:selector", getUser);
-router.post("/login", validateLogin, loginUser);
-router.patch("/update-user", validateUpdate, requireAuth, updateUser);
-router.patch("update-user/:name", validateUpdateRole, updateUserRole);
+router.post("/login", validateLogin, valResult, loginUser);
+router.patch(
+  "/update-user",
+  validateUpdate,
+  valResult,
+  requireAuth,
+  updateUser,
+);
+router.patch(
+  "update-user/:name",
+  validateUpdateRole,
+  valResult,
+  requireAuth,
+  isAdmin,
+  updateUserRole,
+);
 router.patch(
   "user/restartPassword",
   body("email").isEmail().withMessage("email must be provided"),
+  valResult,
   restartPassword,
 );
 

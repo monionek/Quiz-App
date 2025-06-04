@@ -24,7 +24,7 @@ const AnswerSchema = new Schema<Answer>(
     selectedAnswers: { type: [String], required: true },
     answeredAt: { type: Date, required: true },
     isCorrect: { type: Boolean, default: undefined },
-    points: {type: Number, default: 1}
+    points: { type: Number, default: 1 },
   },
   { _id: false },
 );

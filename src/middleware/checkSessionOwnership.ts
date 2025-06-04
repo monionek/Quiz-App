@@ -26,6 +26,5 @@ export const checkSessionOwnership = async (
     return;
   }
 
-  (req as any).quizSession = session;
   next();
 };

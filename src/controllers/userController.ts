@@ -1,18 +1,13 @@
 import { Request, Response } from "express";
 import { User } from "../models/postgresModels/userModel";
-import { Op, where } from "sequelize";
+import { Op } from "sequelize";
 import { hashPassword, verifyPassword } from "../utils/hashPassword";
-import { validationResult } from "express-validator";
 import { generateToken } from "../utils/jwtGenerator";
 import { generatePassword } from "../utils/generateNewPassword";
+import { UpdateUserInterface } from "../models/models";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() }); // 422 Unprocessable Entity
-      return;
-    }
     const { name, password, email } = req.body;
     const existingUser = await User.findOne({
       where: {
@@ -20,7 +15,7 @@ export const registerUser = async (req: Request, res: Response) => {
       },
     });
     if (existingUser) {
-      res.status(400).json({ message: "Name or Email already taken" });
+      res.status(400).json({ message: "username or Email already taken" });
       return;
     }
     const hashedPassword = hashPassword(password);
@@ -47,7 +42,7 @@ export const getUser = async (req: Request, res: Response) => {
       where: { username: selector },
     });
     if (existingUser) {
-      res.status(201).json({ user: existingUser });
+      res.status(201).json({ username: existingUser });
       return;
     }
   } catch (error) {
@@ -60,11 +55,6 @@ export const getUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() }); // 422 Unprocessable Entity
-      return;
-    }
     const { login, password } = req.body;
     const existingUser = await User.findOne({
       where: {
@@ -97,18 +87,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(403).json({ message: "You must be logged in to update user" });
-      return;
-    }
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() });
-      return;
-    }
-
-    const updates: any = {};
+    const updates: UpdateUserInterface = {};
 
     if (req.body.email !== undefined) {
       updates.email = req.body.email;
@@ -126,42 +105,21 @@ export const updateUser = async (req: Request, res: Response) => {
       res.status(400).json({ message: "No valid fields to update" });
       return;
     }
-
-    const [updatedCount] = await User.update(updates, {
-      where: { username: req.user.username },
-    });
-
-    if (updatedCount === 0) {
-      res
-        .status(400)
-        .json({ message: "User not found or nothing was updated" });
+    const userToUpdate = await User.findByPk(req.user?.id);
+    if (!userToUpdate) {
+      res.status(404).json({ message: "User not found" });
       return;
     }
-
+    await userToUpdate.update(updates);
     res.status(200).json({ message: "User updated successfully" });
-    return;
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return;
   }
 };
 
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(403).json({ message: "You must be logged in to update user" });
-      return;
-    }
-    if (req.user.role != "admin") {
-      res.status(403).json({ message: "Unathorized access" });
-      return;
-    }
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() });
-      return;
-    }
     const updateRole = await User.update(
       { role: req.body.role },
       { where: { username: req.params.name } },
@@ -179,11 +137,6 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
 export const restartPassword = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() });
-      return;
-    }
     const email = req.body.email;
     const userToRestart = await User.findOne({ where: { email } });
     if (!userToRestart) {

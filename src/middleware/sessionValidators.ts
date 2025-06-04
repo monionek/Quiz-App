@@ -1,7 +1,7 @@
 import { body, param } from "express-validator";
 
 export const validateStartSession = [
-  param("id").isString().withMessage("Quiz ID must be an integer"),
+  param("id").isString().withMessage("Quiz ID must be an string"),
 ];
 
 export const validateSubmitAnswer = [

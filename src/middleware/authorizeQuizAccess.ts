@@ -27,9 +27,5 @@ export const authorizeQuizAccess = async (
     res.status(403).json({ message: "Access denied" });
     return;
   }
-
-  // attach quiz to request in case controller needs it
-  (req as any).quiz = quiz;
-
   next();
 };
