@@ -22,12 +22,6 @@ export const getQuestions = async (req: Request, res: Response) => {
 export const addQuestion = async (req: Request, res: Response) => {
   const quizId = req.params.quizId;
 
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(422).json({ errors: errors.array() });
-    return;
-  }
-
   try {
     const {
       text,

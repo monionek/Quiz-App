@@ -28,10 +28,10 @@ Question.belongsTo(Quiz, {
   as: "quiz",
 });
 
-Quiz.belongsTo(Category, { foreignKey: "categoryId" });
+Quiz.belongsTo(Category, { foreignKey: "categoryId", as: "category" });
 Category.hasMany(Quiz, { foreignKey: "categoryId" });
 
-Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId" });
+Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId",  as: "tags" });
 Tag.belongsToMany(Quiz, { through: "QuizTags", foreignKey: "tagId" });
 QuizResult.hasMany(QuizResultAnswer, {
   foreignKey: "resultId",

@@ -5,7 +5,7 @@ export const validateQuiz = [
 
   body("description").notEmpty().withMessage("Description must be provided"),
 
-  body("category").isInt().withMessage("Category must be a integer"),
+  body("categoryId").isInt().withMessage("Category must be a integer"),
 
   body("difficulty")
     .notEmpty()
@@ -17,17 +17,7 @@ export const validateQuiz = [
     .isInt({ min: 10 })
     .withMessage("Duration must be an integer (seconds) and at least 10"),
 
-  body("isPrivate").isBoolean().withMessage("isPrivate must be a boolean"),
-
-  body("tags")
-    .isArray()
-    .withMessage("Tags must be an array")
-    .custom((arr) => {
-      if (!arr.every((item: any) => typeof item === typeof 1)) {
-        throw new Error("All tagsid must be a integer");
-      }
-      return true;
-    }),
+  body("isPrivate").isBoolean().withMessage("isPrivate must be a boolean")
 ];
 
 export const validateQuizUpdate = [

@@ -1,15 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import type { JwtPayload } from "../utils/jwtGenerator";
 import { envConfig } from "../config/config";
+import { JwtPayload } from "../models/models";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
-}
 
 export const requireAuth = (
   req: Request,
@@ -21,7 +14,7 @@ export const requireAuth = (
     const token =
       authHeader && authHeader.startsWith("Bearer ")
         ? authHeader.slice(7)
-        : authHeader;
+        : authHeader;        
 
     if (!token) {
       res.status(401).json({ error: "Unauthorized" });

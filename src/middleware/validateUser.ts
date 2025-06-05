@@ -1,7 +1,7 @@
 import { body } from "express-validator";
 
 export const validateRegister = [
-  body("name").notEmpty().withMessage("Username is required"),
+  body("username").notEmpty().withMessage("Username is required"),
   body("email").isEmail().withMessage("Invalid email"),
   body("password")
     .isLength({ min: 6 })
@@ -35,3 +35,5 @@ export const validateUpdateRole = body("role").custom((value) => {
   }
   return false;
 });
+
+export const validatePasswordRestart = body("email").isEmail().withMessage("Invalid email format")

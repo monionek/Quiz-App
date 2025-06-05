@@ -23,8 +23,8 @@ connectMongo();
 connectPostgres();
 
 // Routes
-app.use("/api/quizzes", quizRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/quiz", quizRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/tag", tagRoutes);
 

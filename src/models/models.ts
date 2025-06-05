@@ -1,24 +1,45 @@
-import { Model } from "sequelize";
-import { Tag } from "./postgresModels";
+import { Model, Transaction } from "sequelize";
+import { Tag } from "../models/postgresModels/tagModel";
 
 export interface QuizInstance extends Model {
   id: string;
   title: string;
   description: string;
-  category: string;
+  categoryId: string;
   difficulty: "easy" | "medium" | "hard";
   duration: number;
   isPrivate: boolean;
   language: string;
   ownerId: string;
 
-  setTags: (tags: number[] | Tag[]) => Promise<void>;
-  addTag: (tag: number | Tag) => Promise<void>;
-  addTags: (tags: number[] | Tag[]) => Promise<void>;
-  removeTag: (tag: number | Tag) => Promise<void>;
-  removeTags: (tags: number[] | Tag[]) => Promise<void>;
-  getTags: () => Promise<Tag[]>;
+  setTags(
+    tags: number[] | Tag[],
+    options?: { transaction?: Transaction }
+  ): Promise<void>;
+
+  addTag(
+    tag: number | Tag,
+    options?: { transaction?: Transaction }
+  ): Promise<void>;
+
+  addTags(
+    tags: number[] | Tag[],
+    options?: { transaction?: Transaction }
+  ): Promise<void>;
+
+  removeTag(
+    tag: number | Tag,
+    options?: { transaction?: Transaction }
+  ): Promise<void>;
+
+  removeTags(
+    tags: number[] | Tag[],
+    options?: { transaction?: Transaction }
+  ): Promise<void>;
+
+  getTags(options?: { transaction?: Transaction }): Promise<Tag[]>;
 }
+
 export interface QuestionInterface extends Model {
   id: string;
   quizId: string;
@@ -35,4 +56,10 @@ export interface UpdateUserInterface {
   username?: string;
   email?: string;
   password?: string;
+}
+
+export interface JwtPayload {
+  username: string;
+  role: "admin" | "user";
+  id: string;
 }

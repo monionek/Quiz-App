@@ -13,34 +13,34 @@ import {
   validateLogin,
   validateUpdate,
   validateUpdateRole,
+  validatePasswordRestart,
 } from "../middleware/validateUser";
-import { body } from "express-validator";
 import { valResult } from "../middleware/validateResult";
 import { isAdmin } from "../middleware/isAdmin";
 
 const router = express.Router();
 
 router.post("/register", validateRegister, valResult, registerUser);
-router.get("/:selector", getUser);
+router.get("/:id", getUser);
 router.post("/login", validateLogin, valResult, loginUser);
 router.patch(
   "/update-user",
+  requireAuth,
   validateUpdate,
   valResult,
-  requireAuth,
   updateUser,
 );
 router.patch(
-  "update-user/:name",
-  validateUpdateRole,
-  valResult,
+  "/update-user-role/:id",
   requireAuth,
   isAdmin,
+  validateUpdateRole,
+  valResult,
   updateUserRole,
 );
 router.patch(
-  "user/restartPassword",
-  body("email").isEmail().withMessage("email must be provided"),
+  "/restart-password",
+  validatePasswordRestart,
   valResult,
   restartPassword,
 );

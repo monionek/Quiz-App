@@ -15,10 +15,6 @@ Category.init(
       unique: true,
       allowNull: false,
     },
-    parentId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
   },
   {
     sequelize,

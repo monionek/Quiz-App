@@ -28,7 +28,7 @@ export const Question = sequelize.define(
     },
     options: {
       type: DataTypes.ARRAY(DataTypes.STRING),
-      allowNull: true, // bo pytania otwarte mogą ich nie mieć
+      allowNull: true,
     },
     correctAnswers: {
       type: DataTypes.ARRAY(DataTypes.STRING),

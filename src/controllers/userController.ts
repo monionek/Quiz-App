@@ -8,10 +8,10 @@ import { UpdateUserInterface } from "../models/models";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { name, password, email } = req.body;
+    const { username, password, email } = req.body;
     const existingUser = await User.findOne({
       where: {
-        [Op.or]: [{ email }, { username: name }],
+        [Op.or]: [{ email }, { username: username }],
       },
     });
     if (existingUser) {
@@ -19,38 +19,31 @@ export const registerUser = async (req: Request, res: Response) => {
       return;
     }
     const hashedPassword = hashPassword(password);
-    const newUser = await User.create({
-      username: name,
+    const reqisteredUser = await User.create({
+      username: username,
       password: hashedPassword,
       email: email,
     });
-    if (newUser) {
-      res.status(201).json({ message: "User Registered" });
-      return;
-    }
+    res.status(201).json({ user: reqisteredUser });
   } catch (error) {
     console.log(error);
-    res.status(400).json({ message: "Server error" });
-    return;
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 export const getUser = async (req: Request, res: Response) => {
   try {
-    const selector = req.params.selector;
-    const existingUser = await User.findOne({
-      where: { username: selector },
-    });
-    if (existingUser) {
-      res.status(201).json({ username: existingUser });
+    const userId = req.params.id;
+    const existingUser = await User.findByPk(userId)
+    if (!existingUser) {
+      res.status(404).json({message: "user not found"});
       return;
     }
+    res.status(302).json({ user: existingUser });
   } catch (error) {
     console.log(error);
-    res.status(400).json({ message: "Server error" }); //dobrać odpowiedni kod to tego
-    return;
+    res.status(500).json({ message: "Server error" });
   }
-  res.status(404).json({ message: "user not found" });
 };
 
 export const loginUser = async (req: Request, res: Response) => {
@@ -67,22 +60,20 @@ export const loginUser = async (req: Request, res: Response) => {
     }
     const hashedPassword = existingUser.get().password;
     const pass = verifyPassword(password, hashedPassword);
-    if (pass) {
+    if (!pass) {
+      res.status(403).json({message: "invalid password"})
+    }
       const payload = {
         username: existingUser.get().username,
         role: existingUser.get().role,
-        id: existingUser.get().userId,
+        id: existingUser.get().id,
       };
       const token = generateToken(payload);
       res.status(201).json({ token: token });
-      return;
-    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server error" });
-    return;
   }
-  res.status(400).json({ message: "Invalid password" });
 };
 
 export const updateUser = async (req: Request, res: Response) => {
@@ -100,9 +91,9 @@ export const updateUser = async (req: Request, res: Response) => {
     if (req.body.password !== undefined) {
       updates.password = hashPassword(req.body.password);
     }
-
-    if (Object.keys(updates).length === 0) {
-      res.status(400).json({ message: "No valid fields to update" });
+    const taken = await User.findAll({where:{ [Op.or]: [{username: updates.username}, {email: updates.email}]}});
+    if (taken.length > 0) {
+      res.status(403).json({message: "email or username taken"});
       return;
     }
     const userToUpdate = await User.findByPk(req.user?.id);
@@ -120,18 +111,16 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
-    const updateRole = await User.update(
-      { role: req.body.role },
-      { where: { username: req.params.name } },
-    );
-    if (updateRole.length > 0) {
-      res.status(200).json({ message: "User role updated successfully" });
+    const userToUpdateRole = await User.findByPk(req.params.id);
+    if (!userToUpdateRole) {
+      res.status(404).json({message: "user not found"});
+      return;
     }
-    return;
+    await userToUpdateRole.update({ role: req.body.role })
+      res.status(200).json({ message: "User role updated successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return;
   }
 };
 
@@ -140,22 +129,15 @@ export const restartPassword = async (req: Request, res: Response) => {
     const email = req.body.email;
     const userToRestart = await User.findOne({ where: { email } });
     if (!userToRestart) {
-      res.status(404).json({ message: "No user w registered email" });
+      res.status(404).json({ message: "No user with registered email" });
       return;
     }
-    const newPassword = generatePassword(); // OK
-    const hashed = hashPassword(newPassword); // brak!
-    const update = await User.update(
-      { password: hashed },
-      { where: { email } },
-    );
-    if (update.length > 0) {
-      res.status(201).json({ RestartPassword: newPassword });
-      return;
-    }
+    const newPassword = generatePassword();
+    const hashed = hashPassword(newPassword);
+    await userToRestart.update({password: hashed});
+    res.status(201).json({ RestartPassword: newPassword });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return;
   }
 };

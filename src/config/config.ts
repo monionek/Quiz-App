@@ -1,5 +1,14 @@
 import dotenv from "dotenv";
+import { JwtPayload } from "../models/models";
 dotenv.config();
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtPayload;
+    }
+  }
+}
 
 function getEnvVar(key: string): string {
   const value = process.env[key];

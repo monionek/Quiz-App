@@ -1,20 +1,16 @@
 import { Request, Response } from "express";
-import { validationResult } from "express-validator";
 import { Category, Quiz, Tag } from "../models/postgresModels";
 import { Op } from "sequelize";
 import { QuizInstance } from "../models/models";
+import { sequelize } from "../db/postgres";
 
 export const createQuiz = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      res.status(403).json({ message: "You must be logged in to update user" });
+      res.status(401).json({ message: "Must be logged in" });
       return;
     }
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() }); // 422 Unprocessable Entity
-      return;
-    }
+
     const {
       title,
       description,
@@ -25,7 +21,10 @@ export const createQuiz = async (req: Request, res: Response) => {
       language,
       categoryId,
     } = req.body;
+
     const userId = req.user.id;
+    console.log("USERID:",userId)
+
     const newQuiz = await Quiz.create({
       title,
       description,
@@ -33,21 +32,34 @@ export const createQuiz = async (req: Request, res: Response) => {
       categoryId,
       duration,
       isPrivate,
-      userId,
       language,
+      userId
     });
-    if (newQuiz) {
-      await (newQuiz as QuizInstance).setTags(tags);
-      res.status(201).json({ message: "Quiz created", quiz: newQuiz });
+
+    if (!newQuiz) {
+      res.status(400).json({ message: "Quiz could not be created" });
       return;
     }
+
+    if (Array.isArray(tags)) {
+      const tagInstances = await Promise.all(
+        tags.map(async (tagName: string) => {
+          const [tag] = await Tag.findOrCreate({ where: { name: tagName } });
+          return tag;
+        })
+      );
+
+      await (newQuiz as QuizInstance).setTags(tagInstances);
+    }
+
+    res.status(201).json({ quiz: newQuiz });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-    return;
+    console.error("Create quiz error:", error);
+    res.status(500).json({ error: "Server error" });
   }
-  res.status(400).json({ message: "server error" });
 };
+
+
 
 export const getQuizzes = async (req: Request, res: Response) => {
   try {
@@ -60,6 +72,7 @@ export const getQuizzes = async (req: Request, res: Response) => {
       language,
       sortBy = "createdAt",
       order = "DESC",
+      Tags,
     } = req.query;
 
     const offset = (Number(page) - 1) * Number(limit);
@@ -77,12 +90,34 @@ export const getQuizzes = async (req: Request, res: Response) => {
     if (difficulty) {
       whereClause.difficulty = difficulty;
     }
+
     if (language) {
       whereClause.language = language;
     }
+
     if (categoryId) {
-      whereClause["$Category.name$"] = {
-        [Op.iLike]: `%${categoryId}%`,
+      whereClause.categoryId = categoryId;
+    }
+
+    const includeClause: any[] = [
+      {
+        model: Category,
+        as: "category",
+        attributes: ["id", "name"],
+      },
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["id", "name"],
+        through: { attributes: [] },
+      },
+    ];
+
+    if (Tags) {
+      includeClause[1].where = {
+        name: {
+          [Op.iLike]: `%${Tags}%`,
+        },
       };
     }
 
@@ -90,31 +125,25 @@ export const getQuizzes = async (req: Request, res: Response) => {
       where: whereClause,
       limit: Number(limit),
       offset: offset,
-      include: [Category, Tag],
+      include: includeClause,
       order: [[String(sortBy), String(order)]],
     });
 
     res.status(200).json({ quizzes });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching quizzes:", error);
     res.status(500).json({ message: "Failed to fetch quizzes" });
-    return;
   }
 };
 
+
 export const getQuiz = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res
-        .status(403)
-        .json({ message: "You must be logged in for starting a quiz" });
-      return;
-    }
     const quizId = req.params.id;
     const quiz = await Quiz.findByPk(quizId, {
       include: [
-        { model: Category, attributes: ["id", "name"] },
-        { model: Tag, attributes: ["id", "name"] },
+        {model: Category, as: "category", attributes: ["id", "name"], },
+        { model: Tag, as: "tags", attributes: ["id", "name"] },
       ],
     });
     if (!quiz) {
@@ -125,19 +154,14 @@ export const getQuiz = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to fetch quiz" });
-    return;
   }
 };
 
 export const deleteQuiz = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(403).json({ message: "You must be logged in to update user" });
-      return;
-    }
     const quizId = req.params.id;
-    const userRole = req.user.role;
-    const userId = req.user.username;
+    const userRole = req.user?.role;
+    const userId = req.user?.username;
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) {
       res.status(404).json({ message: "Quiz not found" });
@@ -152,30 +176,14 @@ export const deleteQuiz = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-    return;
   }
-};
-export const submitQuiz = async (req: Request, res: Response) => {
-  // przyjmij odpowiedzi i oblicz wynik
-  res.status(200).json({ score: 3 });
 };
 
 export const editQuiz = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(403).json({ message: "You must be logged in" });
-      return;
-    }
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(422).json({ errors: errors.array() });
-      return;
-    }
-
     const quizId = req.params.id;
-    const userRole = req.user.role;
-    const userId = req.user.id;
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
 
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) {
@@ -183,7 +191,7 @@ export const editQuiz = async (req: Request, res: Response) => {
       return;
     }
 
-    if (userRole !== "admin" && quiz.get().ownerId !== userId) {
+    if (userRole !== "admin" && quiz.get().userId !== userId) {
       res.status(403).json({ message: "Access denied" });
       return;
     }
@@ -206,17 +214,6 @@ export const editQuiz = async (req: Request, res: Response) => {
     }
 
     await quiz.update(updateFields);
-
-    if (req.body.tags && Array.isArray(req.body.tags)) {
-      const tags = req.body.tags;
-
-      const tagInstances = await Tag.findAll({
-        where: { name: tags },
-      });
-
-      await (quiz as QuizInstance).setTags(tagInstances);
-    }
-
     res.status(200).json({ message: "Quiz updated", quiz });
   } catch (error) {
     console.error(error);
@@ -224,40 +221,88 @@ export const editQuiz = async (req: Request, res: Response) => {
   }
 };
 
-export const removeTagFromQuiz = async (req: Request, res: Response) => {
+export const addTagToQuiz = async (req: Request, res: Response) => {
+  const t = await sequelize.transaction();
   try {
-    const { quizId, tagName } = req.params;
+        const quizId = req.params.id;
+    const tagName = req.body.tagName;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
 
-    if (!req.user) {
-      res.status(403).json({ message: "You must be logged in" });
-      return;
-    }
-
-    const quiz = await Quiz.findByPk(quizId);
+    const quiz = await Quiz.findByPk(quizId, { transaction: t });
     if (!quiz) {
+      await t.rollback();
       res.status(404).json({ message: "Quiz not found" });
       return;
     }
 
-    const userRole = req.user.role;
-    const userId = req.user.id;
-
-    if (userRole !== "admin" && quiz.get().ownerId !== userId) {
+    if (userRole !== "admin" && quiz.get().userId !== userId) {
+      await t.rollback();
       res.status(403).json({ message: "Access denied" });
       return;
     }
 
-    const tag = await Tag.findOne({ where: { name: tagName } });
+    const [tag] = await Tag.findOrCreate({
+      where: { name: tagName },
+      defaults: { name: tagName },
+      transaction: t,
+    });
+
+    await (quiz as QuizInstance).addTag(tag, { transaction: t });
+
+    await t.commit();
+    res.status(200).json({ message: `Tag '${tagName}' added to quiz` });
+  } catch (error) {
+    await t.rollback();
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const removeTagFromQuiz = async (req: Request, res: Response) => {
+  const t = await sequelize.transaction();
+  try {
+    const quizId = req.params.id;
+    const tagName = req.body.tagName;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    const quiz = await Quiz.findByPk(quizId, { transaction: t });
+    if (!quiz) {
+      await t.rollback();
+      res.status(404).json({ message: "Quiz not found" });
+      return;
+    }
+
+    if (userRole !== "admin" && quiz.get().userId !== userId) {
+      await t.rollback();
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    const tag = await Tag.findOne({ where: { name: tagName }, transaction: t });
     if (!tag) {
+      await t.rollback();
       res.status(404).json({ message: "Tag not found" });
       return;
     }
 
-    await (quiz as QuizInstance).removeTag(tag);
+    await (quiz as QuizInstance).removeTag(tag, { transaction: t });
 
+    await t.commit();
     res.status(200).json({ message: `Tag '${tagName}' removed from quiz` });
   } catch (error) {
+    await t.rollback();
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteAllQuizzes = async (req: Request, res: Response) => {
+  try {
+    await Quiz.destroy({ where: {}, truncate: true, cascade: true });
+    res.status(200).json({ message: "All quizzes have been deleted." });
+  } catch (error) {
+    console.error("Failed to delete quizzes:", error);
+    res.status(500).json({ message: "Server error while deleting quizzes." });
   }
 };

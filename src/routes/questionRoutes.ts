@@ -10,6 +10,7 @@ import {
   validateAddQuestion,
   validateEditQuestion,
 } from "../middleware/questionValidators";
+import { valResult } from "../middleware/validateResult";
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.post(
   "/quiz/:quizId/questions",
   authorizeQuizAccess,
   validateAddQuestion,
+  valResult,
   addQuestion,
 );
 router.patch(

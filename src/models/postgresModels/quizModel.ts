@@ -40,9 +40,9 @@ export const Quiz = sequelize.define(
       allowNull: false,
       defaultValue: "pl",
     },
-    ownerId: {
+    userId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: false
     },
     categoryId: {
       type: DataTypes.INTEGER,
@@ -58,9 +58,3 @@ export const Quiz = sequelize.define(
     timestamps: true,
   },
 );
-
-Quiz.belongsTo(Category, { foreignKey: "categoryId" });
-Category.hasMany(Quiz, { foreignKey: "categoryId" });
-
-Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId" });
-Tag.belongsToMany(Quiz, { through: "QuizTags", foreignKey: "tagId" });
