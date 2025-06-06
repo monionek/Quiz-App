@@ -4,7 +4,6 @@ import { Question } from "./questionModel";
 import { Tag } from "./tagModel";
 import { Category } from "./categoryModel";
 import { QuizResult } from "./quizResultModel";
-import { QuizResultAnswer } from "./quizResultAnswer";
 
 // RELACJA: User → Quiz (1:N)
 User.hasMany(Quiz, {
@@ -33,16 +32,7 @@ Category.hasMany(Quiz, { foreignKey: "categoryId" });
 
 Quiz.belongsToMany(Tag, { through: "QuizTags", foreignKey: "quizId",  as: "tags" });
 Tag.belongsToMany(Quiz, { through: "QuizTags", foreignKey: "tagId" });
-QuizResult.hasMany(QuizResultAnswer, {
-  foreignKey: "resultId",
-  as: "answers",
-  onDelete: "CASCADE",
-});
 
-QuizResultAnswer.belongsTo(QuizResult, {
-  foreignKey: "resultId",
-  as: "result",
-});
 // User -> QuizResult
 User.hasMany(QuizResult, {
   foreignKey: "userId",

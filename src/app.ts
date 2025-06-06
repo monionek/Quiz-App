@@ -12,6 +12,9 @@ import userRoutes from "./routes/userRoutes";
 import "./models/postgresModels/index";
 import categoryRoutes from "./routes/categoryRoutes";
 import tagRoutes from "./routes/tagRoutes";
+import questionsRoutes from "./routes/questionRoutes";
+import quizSessionRoutes from "./routes/quizSessionRoutes";
+import quizResultRoutes from "./routes/quizResultRoutes";
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -27,6 +30,9 @@ app.use("/api/user", userRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/tag", tagRoutes);
+app.use("/api/questions", questionsRoutes);
+app.use("/api/session", quizSessionRoutes);
+app.use("/api/quiz-result", quizResultRoutes);
 
 // Error handling
 app.use(errorHandler);

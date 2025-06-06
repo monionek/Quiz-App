@@ -6,32 +6,54 @@ import { QuizResult } from "../models/postgresModels/quizResultModel";
 
 export const startSession = async (req: Request, res: Response) => {
   try {
-    //in middleware checking if user is logged in
-    const quizId = req.params.id;
+    const quizId = req.params.quizId;
+    const userId = req.user?.id;
 
     const quiz = await Quiz.findByPk(quizId);
-    if (!quiz) {
+    if (!quiz)  { 
       res.status(404).json({ message: "Quiz not found" });
       return;
-    }
-    const session = new QuizSession({
-      userId: req.user?.id,
-      quizId: quizId,
+    };
+    const durationMinutes = quiz.get().duration || 15;
+
+    const start = new Date();
+    const end = new Date(start.getTime() + durationMinutes * 60_000);
+
+    const existingSession = await QuizSession.findOne({
+      userId,
+      quizId,
+      status: "in_progress",
     });
-    await session.save();
-    res.status(201).json({ message: "session started" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "server error" });
+
+    if (existingSession) {
+      res.status(400).json({ message: "You already started this quiz" });
+      return;
+    }
+
+    const session = await QuizSession.create({
+      userId,
+      quizId,
+      startedAt: start,
+      endTime: end,
+    });
+
+    res.status(201).json({ session });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error starting quiz session" });
   }
 };
 
 export const submitAnswer = async (req: Request, res: Response) => {
   try {
-    const sessionId = req.params.sessionId;
+    const sessionId = req.params.id;
     const session = await QuizSession.findById(sessionId);
     if (!session) {
       res.status(404).json({ message: "Session not found" });
+      return;
+    }
+    if (req.user?.id !== session.userId) {
+      res.status(403).json({message: "Access denied"});
       return;
     }
 
@@ -87,7 +109,7 @@ export const submitAnswer = async (req: Request, res: Response) => {
       durationInSeconds,
     });
     await session.save();
-    res.status(200).json({ message: "Answer saved", isCorrect, points });
+    res.status(200).json({ message: "Answer saved", isCorrect, score });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -117,6 +139,10 @@ export const getSession = async (req: Request, res: Response) => {
       res.status(404).json({ message: "session not found" });
       return;
     }
+    if (session.userId !== req.user?.id) {
+      res.status(403).json({message: "Access Denied"});
+      return;
+    } 
     res.status(203).json({ session: session });
   } catch (error) {
     console.log(error);

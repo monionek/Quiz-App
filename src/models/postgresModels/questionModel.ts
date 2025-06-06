@@ -43,11 +43,17 @@ export const Question = sequelize.define(
     },
     order: {
       type: DataTypes.INTEGER,
-      defaultValue: 0,
+      allowNull: false
     },
   },
   {
     tableName: "questions",
     timestamps: true,
-  },
+  indexes: [
+    {
+      unique: true,
+      fields: ["quizId", "order"],
+    },
+  ],
+}
 );

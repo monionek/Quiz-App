@@ -9,13 +9,14 @@ export interface Answer {
 }
 
 export interface QuizSessionDocument extends Document {
-  userId: string; // Postgres User.id
-  quizId: string; // Postgres Quiz.id
+  userId: string;
+  quizId: string;
   answers: Answer[];
   currentQuestionIndex: number;
   status: "in_progress" | "completed";
   startedAt: Date;
   endedAt: Date;
+  endTime: Date;
 }
 
 const AnswerSchema = new Schema<Answer>(
@@ -42,10 +43,9 @@ const QuizSessionSchema = new Schema<QuizSessionDocument>(
     },
     startedAt: { type: Date, default: Date.now },
     endedAt: { type: Date },
+    endTime: { type: Date, required: true },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true }
 );
 
 export const QuizSession = model<QuizSessionDocument>(

@@ -23,8 +23,6 @@ export const createQuiz = async (req: Request, res: Response) => {
     } = req.body;
 
     const userId = req.user.id;
-    console.log("USERID:",userId)
-
     const newQuiz = await Quiz.create({
       title,
       description,
@@ -167,7 +165,7 @@ export const deleteQuiz = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Quiz not found" });
       return;
     }
-    if (userRole === "admin" || quiz.get().ownerId === userId) {
+    if (userRole === "admin" || quiz.get().userId === userId) {
       await quiz.destroy();
       res.status(200).json({ message: "Quiz deleted" });
       return;

@@ -1,14 +1,13 @@
 import { Request, Response } from "express";
-import { Question } from "../models/postgresModels";
-import { validationResult } from "express-validator";
+import { Question, Quiz } from "../models/postgresModels";
 
 export const getQuestions = async (req: Request, res: Response) => {
   try {
     const quizId = req.params.quizId;
     const questions = await Question.findAll({ where: { quizId } });
 
-    const safeQuestions = questions.map((q) => {
-      const { correctAnswers, ...rest } = q.get({ plain: true });
+    const safeQuestions = questions.map((el) => {
+      const { correctAnswers, ...rest } = el.get({ plain: true });
       return rest;
     });
 
@@ -20,9 +19,19 @@ export const getQuestions = async (req: Request, res: Response) => {
 };
 
 export const addQuestion = async (req: Request, res: Response) => {
-  const quizId = req.params.quizId;
-
   try {
+    const quizId = req.params.quizId;
+    const quiz = await Quiz.findByPk(quizId);
+    if (!quiz) {
+      res.status(404).json({message: "Quiz not found"});
+      return;
+    }
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    if ( role !== "admin" && userId !== quiz.get().userId) {
+      res.status(403).json({message: "Access denied"});
+      return;
+    }
     const {
       text,
       type,
@@ -30,9 +39,8 @@ export const addQuestion = async (req: Request, res: Response) => {
       correctAnswers,
       hint,
       points = 1,
-      order = 0,
+      order,
     } = req.body;
-
     const newQuestion = await Question.create({
       quizId,
       text,
@@ -50,18 +58,25 @@ export const addQuestion = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error while creating question" });
+    res.status(500).json({ message: error });
   }
 };
 
 export const editQuestion = async (req: Request, res: Response) => {
+  try {
+      const quizId = req.params.quizId;
+    const quiz = await Quiz.findByPk(quizId);
+    if (!quiz) {
+      res.status(404).json({message: "Quiz not found"});
+      return;
+    }
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    if ( role !== "admin" && userId !== quiz.get().userId) {
+      res.status(403).json({message: "Access denied"});
+      return;
+    }
   const questionId = req.params.questionId;
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(422).json({ errors: errors.array() });
-    return;
-  }
 
   const question = await Question.findByPk(questionId);
   if (!question) {
@@ -69,11 +84,16 @@ export const editQuestion = async (req: Request, res: Response) => {
     return;
   }
 
-  const { text, type, options, correctAnswers, hint, points, order } = req.body;
-
+  const { text, options, correctAnswers, hint, points, order } = req.body;
+if ((correctAnswers !== undefined && options === undefined) || 
+    (correctAnswers === undefined && options !== undefined)) {
+  res.status(403).json({
+    message: "You must provide both options and correctAnswers together if you're updating either.",
+  });
+  return;
+}
   await question.update({
     ...(text !== undefined && { text }),
-    ...(type !== undefined && { type }),
     ...(options !== undefined && { options }),
     ...(correctAnswers !== undefined && { correctAnswers }),
     ...(hint !== undefined && { hint }),
@@ -82,9 +102,26 @@ export const editQuestion = async (req: Request, res: Response) => {
   });
 
   res.status(200).json({ message: "Question updated", question });
+} catch (error) {
+  console.log(error);
+  res.status(500).json({message: error})
+}
 };
 
 export const deleteQuestion = async (req: Request, res: Response) => {
+  try {
+      const quizId = req.params.quizId;
+    const quiz = await Quiz.findByPk(quizId);
+    if (!quiz) {
+      res.status(404).json({message: "Quiz not found"});
+      return;
+    }
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    if ( role !== "admin" && userId !== quiz.get().userId) {
+      res.status(403).json({message: "Access denied"});
+      return;
+    }
   const questionId = req.params.questionId;
 
   const question = await Question.findByPk(questionId);
@@ -95,4 +132,8 @@ export const deleteQuestion = async (req: Request, res: Response) => {
 
   await question.destroy();
   res.status(200).json({ message: "Question deleted" });
+} catch (error) {
+  console.log(error);
+  res.status(500).json({message: error});
+}
 };

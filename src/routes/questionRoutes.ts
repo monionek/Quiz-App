@@ -5,29 +5,30 @@ import {
   editQuestion,
   getQuestions,
 } from "../controllers/questionController";
-import { authorizeQuizAccess } from "../middleware/authorizeQuizAccess";
 import {
-  validateAddQuestion,
-  validateEditQuestion,
+  validateQuestionCreate,
+  validateQuestionEdit,
 } from "../middleware/questionValidators";
 import { valResult } from "../middleware/validateResult";
+import { requireAuth } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get("/quiz/:quizId/questions", authorizeQuizAccess, getQuestions);
+router.get("/:quizId", requireAuth, getQuestions);
 router.post(
-  "/quiz/:quizId/questions",
-  authorizeQuizAccess,
-  validateAddQuestion,
+  "/:quizId/add",
+  requireAuth,
+  validateQuestionCreate,
   valResult,
   addQuestion,
 );
 router.patch(
-  "/questions/:questionId",
-  authorizeQuizAccess,
-  validateEditQuestion,
+  "/:quizId/edit/:questionId",
+  requireAuth,
+  validateQuestionEdit,
+  valResult,
   editQuestion,
 );
-router.delete("/questions/:questionId", authorizeQuizAccess, deleteQuestion);
+router.delete("/:quizId/delete/:questionId", requireAuth, deleteQuestion);
 
 export default router;
